@@ -24,12 +24,19 @@ jobs:
           Copy-Item "template_unpack\templates\*" $templates -Recurse -Force
       - name: Import project
         shell: pwsh
-        run: .\godot\Godot_v4.3-stable_win64.exe --headless --editor --path . --quit
+        run: .\godot\Godot_v4.3-stable_win64.exe --headless --editor --path "$PWD" --quit
       - name: Export Windows executable
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force build | Out-Null
-          .\godot\Godot_v4.3-stable_win64.exe --headless --path . --export-release "Windows Desktop" build\Minecraftgame.exe
+          $output = Join-Path $PWD "build\Minecraftgame.exe"
+          New-Item -ItemType Directory -Force (Split-Path $output) | Out-Null
+          & .\godot\Godot_v4.3-stable_win64.exe --headless --path "$PWD" --export-release "Windows Desktop" "$output"
+          if (-not (Test-Path $output)) {
+            Write-Host "Export did not create the expected EXE. Files in project:"
+            Get-ChildItem -Recurse -File | Select-Object -ExpandProperty FullName
+            throw "Minecraftgame.exe was not created."
+          }
+          Get-Item $output | Format-List FullName,Length
       - name: Upload playable game
         uses: actions/upload-artifact@v4
         with:
