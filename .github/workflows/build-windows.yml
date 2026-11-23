@@ -11,15 +11,23 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Setup Godot
+
+      - name: Setup Godot and Windows export templates
         uses: chickensoft-games/setup-godot@v2
         with:
           version: 4.3.0
           use-dotnet: false
+          include-templates: true
+
+      - name: Import project
+        run: godot --headless --editor --path . --quit
+
       - name: Export Windows build
-        run: godot --headless --path . --export-release "Windows Desktop" Minecraftgame.exe
+        run: godot --headless --path . --export-release "Windows Desktop" build/Minecraftgame.exe
+
       - name: Upload game
         uses: actions/upload-artifact@v4
         with:
           name: Minecraftgame-Windows
-          path: Minecraftgame.exe
+          path: build/Minecraftgame.exe
+          if-no-files-found: error
