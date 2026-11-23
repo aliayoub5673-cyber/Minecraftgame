@@ -3,29 +3,34 @@ name: Build Windows game
 on:
   workflow_dispatch:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
 
 jobs:
-  export-windows:
-    runs-on: ubuntu-latest
+  windows:
+    runs-on: windows-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup Godot and Windows export templates
-        uses: chickensoft-games/setup-godot@v2
-        with:
-          version: 4.3.0
-          use-dotnet: false
-          include-templates: true
-
+      - name: Install Godot 4.3 and export templates
+        shell: pwsh
+        run: |
+          $version = "4.3-stable"
+          Invoke-WebRequest "https://github.com/godotengine/godot/releases/download/$version/Godot_v4.3-stable_win64.exe.zip" -OutFile godot.zip
+          Expand-Archive godot.zip -DestinationPath godot
+          Invoke-WebRequest "https://github.com/godotengine/godot/releases/download/$version/Godot_v4.3-stable_export_templates.tpz" -OutFile templates.tpz
+          $templates = "$env:APPDATA\Godot\export_templates\4.3.stable"
+          New-Item -ItemType Directory -Force $templates | Out-Null
+          Expand-Archive templates.tpz -DestinationPath template_unpack
+          Copy-Item "template_unpack\templates\*" $templates -Recurse -Force
       - name: Import project
-        run: godot --headless --editor --path . --quit
-
-      - name: Export Windows build
-        run: godot --headless --path . --export-release "Windows Desktop" build/Minecraftgame.exe
-
-      - name: Upload game
+        shell: pwsh
+        run: .\godot\Godot_v4.3-stable_win64.exe --headless --editor --path . --quit
+      - name: Export Windows executable
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force build | Out-Null
+          .\godot\Godot_v4.3-stable_win64.exe --headless --path . --export-release "Windows Desktop" build\Minecraftgame.exe
+      - name: Upload playable game
         uses: actions/upload-artifact@v4
         with:
           name: Minecraftgame-Windows
