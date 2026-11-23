@@ -11,6 +11,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Install Godot 4.3 and export templates
         shell: pwsh
         run: |
@@ -22,21 +23,30 @@ jobs:
           New-Item -ItemType Directory -Force $templates | Out-Null
           Expand-Archive templates.tpz -DestinationPath template_unpack
           Copy-Item "template_unpack\templates\*" $templates -Recurse -Force
+          if (-not (Test-Path "$templates\windows_release_x86_64.exe")) {
+            throw "Windows export template was not installed."
+          }
+
       - name: Import project
         shell: pwsh
-        run: .\godot\Godot_v4.3-stable_win64.exe --headless --editor --path "$PWD" --quit
+        run: |
+          & .\godot\Godot_v4.3-stable_win64_console.exe --headless --editor --path "$PWD" --quit
+          if ($LASTEXITCODE -ne 0) { throw "Godot project import failed." }
+
       - name: Export Windows executable
         shell: pwsh
         run: |
           $output = Join-Path $PWD "build\Minecraftgame.exe"
           New-Item -ItemType Directory -Force (Split-Path $output) | Out-Null
-          & .\godot\Godot_v4.3-stable_win64.exe --headless --path "$PWD" --export-release "Windows Desktop" "$output"
+          & .\godot\Godot_v4.3-stable_win64_console.exe --headless --path "$PWD" --verbose --export-release "Windows Desktop" "$output"
+          if ($LASTEXITCODE -ne 0) { throw "Godot export failed with exit code $LASTEXITCODE." }
           if (-not (Test-Path $output)) {
-            Write-Host "Export did not create the expected EXE. Files in project:"
-            Get-ChildItem -Recurse -File | Select-Object -ExpandProperty FullName
+            Write-Host "Export finished without producing the EXE. Godot export presets:"
+            Get-Content export_presets.cfg
             throw "Minecraftgame.exe was not created."
           }
           Get-Item $output | Format-List FullName,Length
+
       - name: Upload playable game
         uses: actions/upload-artifact@v4
         with:
