@@ -85,7 +85,7 @@ func _show_main_menu() -> void:
 func _refresh_world_list() -> void:
     for child in worlds_list.get_children():
         child.queue_free()
-    DirAccess.make_dir_recursive_absolute(WORLD_DIR)
+    DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(WORLD_DIR))
     var dir := DirAccess.open(WORLD_DIR)
     var found := false
     if dir:
@@ -266,7 +266,7 @@ func _update_hud() -> void:
 func _save_world() -> void:
     if not game_started or current_world.is_empty():
         return
-    DirAccess.make_dir_recursive_absolute(WORLD_DIR)
+    DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(WORLD_DIR))
     var saved_blocks: Array = []
     for cell in blocks:
         saved_blocks.append({"x":cell.x,"y":cell.y,"z":cell.z,"kind":blocks[cell]})
