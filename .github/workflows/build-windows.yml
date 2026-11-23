@@ -1,0 +1,25 @@
+name: Build Windows game
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  export-windows:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Godot
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.3.0
+          use-dotnet: false
+      - name: Export Windows build
+        run: godot --headless --path . --export-release "Windows Desktop" Minecraftgame.exe
+      - name: Upload game
+        uses: actions/upload-artifact@v4
+        with:
+          name: Minecraftgame-Windows
+          path: Minecraftgame.exe
